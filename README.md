@@ -2,7 +2,7 @@
 
 Glossário online do guia de campo **Morfologia de Angiospermas**, de Ranna Costa e Veridiana V. Scudeller (2026). São 236 verbetes de botânica, organizados pelos seis capítulos do guia: Semente, Raiz, Caule, Folha, Flor e Fruto.
 
-🌐 **Ver online:** https://httpsmaxwell.github.io/Morfologia-de-Angiospermas---Gloss-rio-do-guia-de-campo/
+🌐 **Ver online:** https://guia-angiospermas.netlify.app/
 
 ## Recursos
 
