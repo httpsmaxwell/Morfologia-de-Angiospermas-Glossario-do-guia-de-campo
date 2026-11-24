@@ -114,6 +114,7 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--line);font-si
 .switch-m{display:none}
 /* Responsive */
 @media (max-width:860px){
+  .filter-dock{position:sticky;top:0;z-index:5;background:var(--paper)}
   .shell{grid-template-columns:1fr}
   .switch-m{display:inline-flex;position:absolute;top:22px;right:20px}
   .topbar{display:none}
@@ -122,9 +123,9 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--line);font-si
   .rail{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:24px 20px 16px;gap:0}
   .nav{display:none}
   .rail-foot{display:none}
-  .chapters{display:flex;position:static;flex-wrap:wrap;overflow:visible;padding:8px 0;margin-bottom:12px}
+  .chapters{display:flex;position:static;flex-wrap:wrap;overflow:visible;padding:8px 0 12px;margin-bottom:0;border-bottom:1px solid var(--line)}
   main{padding:32px 20px 72px}
-  .tools{top:0}
+  .tools{position:static;top:auto;margin-bottom:0;border-bottom:0;padding-bottom:8px}
   .count{display:inline;font-size:12px}
 }
 @media (max-width:420px){.tools{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}.count{justify-self:end;font-size:12px}.chapters{gap:6px}.chapters button{padding:7px 11px;font-size:13px}}
@@ -151,16 +152,18 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--line);font-si
       <a class="dl" href="https://drive.google.com/uc?export=download&id=1CN4RXK_cwJlnq27odbtxC0mMbkZYgiLq" target="_blank" rel="noopener">Baixar o guia completo em PDF</a>
     </header>
 
-    <div class="tools">
-      <label class="search">
-        <span class="sr-only" style="position:absolute;left:-9999px">Buscar termo</span>
-        <input type="search" id="q" placeholder="Buscar termo ou definição" autocomplete="off" aria-controls="content" aria-describedby="count">
-        <span class="kbd" aria-hidden="true">/</span>
-      </label>
-      <span class="count" id="count" aria-live="polite"></span>
-    </div>
+    <div class="filter-dock">
+      <div class="tools">
+        <label class="search">
+          <span class="sr-only" style="position:absolute;left:-9999px">Buscar termo</span>
+          <input type="search" id="q" placeholder="Buscar termo ou definição" autocomplete="off" aria-controls="content" aria-describedby="count">
+          <span class="kbd" aria-hidden="true">/</span>
+        </label>
+        <span class="count" id="count" aria-live="polite"></span>
+      </div>
 
-    <div class="chapters" id="chapters" role="group" aria-label="Filtrar por capítulo"></div>
+      <div class="chapters" id="chapters" role="group" aria-label="Filtrar por capítulo"></div>
+    </div>
 
     <div id="content"></div>
     <p class="empty" id="empty" hidden>Nenhum verbete encontrado. Tente outros termos ou limpe a busca.</p>
