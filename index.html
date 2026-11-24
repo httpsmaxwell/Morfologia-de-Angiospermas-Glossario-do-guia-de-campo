@@ -122,12 +122,12 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--line);font-si
   .rail{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:24px 20px 16px;gap:0}
   .nav{display:none}
   .rail-foot{display:none}
-  .chapters{display:flex;position:sticky;top:68px;z-index:3;background:var(--paper);padding:8px 0;margin-bottom:12px}
+  .chapters{display:flex;position:static;flex-wrap:wrap;overflow:visible;padding:8px 0;margin-bottom:12px}
   main{padding:32px 20px 72px}
   .tools{top:0}
   .count{display:inline;font-size:12px}
 }
-@media (max-width:420px){.tools{gap:8px}.count{font-size:11px}.chapters{top:64px}.chapters button{padding:7px 11px;font-size:13px}}
+@media (max-width:420px){.tools{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}.count{justify-self:end;font-size:12px}.chapters{gap:6px}.chapters button{padding:7px 11px;font-size:13px}}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style>
 </head>
