@@ -57,6 +57,7 @@ main{padding:56px clamp(20px,5vw,64px) 96px;min-width:0}
 .hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(40px,6vw,68px);line-height:1;letter-spacing:-.02em;margin:0}
 .hero h1 b{font-weight:500}
 .hero p{margin:0;color:var(--soft);font-size:17px}
+.guide-credit{font-size:14px!important}
 
 .tools{position:sticky;top:0;z-index:4;background:var(--paper);padding:12px 0 16px;margin:0 0 24px;display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--line)}
 .search{position:relative;flex:1;min-width:0}
@@ -65,6 +66,9 @@ main{padding:56px clamp(20px,5vw,64px) 96px;min-width:0}
 .search input:focus{outline:none;border-color:var(--ink)}
 .kbd{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--faint);border:1px solid var(--line);border-radius:6px;padding:2px 7px;pointer-events:none}
 .count{font-size:14px;color:var(--soft);white-space:nowrap;font-variant-numeric:tabular-nums}
+.term-title{color:inherit;text-decoration:none;text-underline-offset:4px}
+.term-title:hover{text-decoration:underline}
+.term-title:focus-visible{outline-offset:5px}
 
 .chapters{display:none;gap:8px;overflow-x:auto;padding:0 0 4px;margin:0 0 20px;scrollbar-width:none}
 .chapters::-webkit-scrollbar{display:none}
@@ -118,11 +122,12 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--line);font-si
   .rail{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:24px 20px 16px;gap:0}
   .nav{display:none}
   .rail-foot{display:none}
-  .chapters{display:flex}
+  .chapters{display:flex;position:sticky;top:68px;z-index:3;background:var(--paper);padding:8px 0;margin-bottom:12px}
   main{padding:32px 20px 72px}
   .tools{top:0}
-  .count{display:none}
+  .count{display:inline;font-size:12px}
 }
+@media (max-width:420px){.tools{gap:8px}.count{font-size:11px}.chapters{top:64px}.chapters button{padding:7px 11px;font-size:13px}}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style>
 </head>
@@ -142,13 +147,14 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--line);font-si
     <header class="hero">
       <h1>Termos da <b>botânica</b>, do fruto ao pólen.</h1>
       <p>236 verbetes, agrupados pelos seis capítulos do guia.</p>
-      <a class="dl" href="https://drive.google.com/uc?export=download&id=1CN4RXK_cwJlnq27odbtxC0mMbkZYgiLq" target="_blank" rel="noopener">Baixar o guia em PDF</a>
+      <p class="guide-credit">Guia de campo de Ranna Costa e Veridiana V. Scudeller</p>
+      <a class="dl" href="https://drive.google.com/uc?export=download&id=1CN4RXK_cwJlnq27odbtxC0mMbkZYgiLq" target="_blank" rel="noopener">Baixar o guia completo em PDF</a>
     </header>
 
     <div class="tools">
       <label class="search">
         <span class="sr-only" style="position:absolute;left:-9999px">Buscar termo</span>
-        <input type="search" id="q" placeholder="Buscar termo ou definição" autocomplete="off">
+        <input type="search" id="q" placeholder="Buscar termo ou definição" autocomplete="off" aria-controls="content" aria-describedby="count">
         <span class="kbd" aria-hidden="true">/</span>
       </label>
       <span class="count" id="count" aria-live="polite"></span>
@@ -157,7 +163,7 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--line);font-si
     <div class="chapters" id="chapters" role="group" aria-label="Filtrar por capítulo"></div>
 
     <div id="content"></div>
-    <p class="empty" id="empty" hidden>Nenhum termo com essa busca.</p>
+    <p class="empty" id="empty" hidden>Nenhum verbete encontrado. Tente outros termos ou limpe a busca.</p>
 
     <footer>As definições foram extraídas do próprio guia. Para ver as ilustrações e fotografias, consulte a página indicada no original. <a href="https://drive.google.com/uc?export=download&id=1CN4RXK_cwJlnq27odbtxC0mMbkZYgiLq" target="_blank" rel="noopener">Baixar o PDF completo</a>.</footer>
   </main>
@@ -178,7 +184,11 @@ const nav = $('#nav'), chapsEl = $('#chapters'), content = $('#content'), q = $(
 let active = null;
 
 function esc(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-function anchor(k){return 'cap-'+k.toLowerCase();}
+function normalize(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
+function slug(s){return normalize(s).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
+function anchor(k){return 'cap-'+slug(k);}
+function termAnchor(it){return it._id;}
+const SEARCH_ITEMS = ITEMS.map((it,index)=>({...it, _search:normalize(it.t+' '+it.d), _id:'termo-'+slug(it.c)+'-'+slug(it.t)+'-'+it.p+'-'+(index+1)}));
 
 // Build static UI once
 CHAPS.forEach(ch => {
@@ -187,27 +197,28 @@ CHAPS.forEach(ch => {
   b.style.setProperty('--c', ch.c);
   b.dataset.k = ch.k;
   b.innerHTML = '<span class="sw"></span><span>'+ch.k+'</span><span class="n" data-n="'+ch.k+'"></span>';
-  b.onclick = () => { active = (active===ch.k)?null:ch.k; update(); };
+  b.onclick = () => selectChapter(active===ch.k?null:ch.k);
   li.appendChild(b); nav.appendChild(li);
 
   const cb = document.createElement('button');
   cb.textContent = ch.k; cb.dataset.k = ch.k; cb.style.setProperty('--c', ch.c);
-  cb.onclick = () => { active = (active===ch.k)?null:ch.k; update(); };
+  cb.onclick = () => selectChapter(active===ch.k?null:ch.k);
   chapsEl.appendChild(cb);
 });
 const allBtn = document.createElement('button'); allBtn.textContent='Todos'; allBtn.dataset.k='';
-allBtn.onclick = () => { active=null; update(); };
+allBtn.onclick = () => selectChapter(null);
 chapsEl.prepend(allBtn);
 
 function render(){
-  const term = q.value.trim().toLowerCase();
-  let total = 0;
+  const terms = normalize(q.value.trim()).split(/\s+/).filter(Boolean);
+  const rows = SEARCH_ITEMS.filter(it=>terms.every(term=>it._search.includes(term)));
+  const byChapter = new Map(CHAPS.map(ch=>[ch.k,rows.filter(it=>it.c===ch.k)]));
+  const total = rows.length;
   const html = CHAPS.map(ch => {
-    const rows = ITEMS.filter(it => it.c===ch.k && (!term || it.t.toLowerCase().includes(term) || it.d.toLowerCase().includes(term)));
-    total += rows.length;
-    const hidden = (active && active!==ch.k) || rows.length===0;
-    const body = rows.map(it =>
-      '<article class="term"><h3>'+esc(it.t)+'</h3><a class="pg" href="#" title="Página '+it.p+' do guia">p. '+it.p+'</a><p>'+esc(it.d)+'</p></article>'
+    const chapterRows = byChapter.get(ch.k);
+    const hidden = (active && active!==ch.k) || chapterRows.length===0;
+    const body = chapterRows.map(it =>
+      '<article class="term" id="'+termAnchor(it)+'"><h3><a class="term-title" href="#'+termAnchor(it)+'" aria-label="Link direto para '+esc(it.t)+'">'+esc(it.t)+'</a></h3><a class="pg" href="https://drive.google.com/file/d/1CN4RXK_cwJlnq27odbtxC0mMbkZYgiLq/view#page='+it.p+'" target="_blank" rel="noopener" title="Abrir a página '+it.p+' do guia em PDF">p. '+it.p+'</a><p>'+esc(it.d)+'</p></article>'
     ).join('');
     return '<section class="chap" id="'+anchor(ch.k)+'" style="--c:'+ch.c+'"'+(hidden?' hidden':'')+'>'
       + '<header class="chap-head"><span class="chap-num">'+(CHAPS.indexOf(ch)+1)+'</span><h2>'+ch.k+'</h2>'
@@ -217,34 +228,52 @@ function render(){
   empty.hidden = total>0;
   countEl.textContent = total + (total===1?' termo':' termos');
   CHAPS.forEach(ch => {
-    const n = ITEMS.filter(it => it.c===ch.k && (!term || it.t.toLowerCase().includes(term) || it.d.toLowerCase().includes(term))).length;
+    const n = byChapter.get(ch.k).length;
     const el = document.querySelector('[data-n="'+ch.k+'"]'); if(el) el.textContent = n;
   });
 }
 
-function update(){
+function update(scroll=true){
   [...nav.querySelectorAll('button')].forEach(b => b.setAttribute('aria-current', String(b.dataset.k===active)));
   [...chapsEl.querySelectorAll('button')].forEach(b => b.setAttribute('aria-pressed', String((b.dataset.k||null)===active)));
   render();
-  if(active) document.getElementById(anchor(active)).scrollIntoView({block:'start'});
+  if(scroll && active) document.getElementById(anchor(active)).scrollIntoView({block:'start'});
+}
+
+function selectChapter(chapter){
+  active=chapter;
+  const hash=chapter?'#'+anchor(chapter):'';
+  history.replaceState(null,'',location.pathname+location.search+hash);
+  update();
+}
+
+function syncFromHash(){
+  const id=decodeURIComponent(location.hash.slice(1));
+  const chapter=CHAPS.find(ch=>anchor(ch.k)===id);
+  const item=SEARCH_ITEMS.find(it=>termAnchor(it)===id);
+  active=chapter?chapter.k:(item?item.c:null);
+  update(false);
+  if(id && (chapter||item)) requestAnimationFrame(()=>document.getElementById(id)?.scrollIntoView({block:'start'}));
 }
 
 
 const root = document.documentElement;
-root.dataset.theme = 'light';
+try{root.dataset.theme=localStorage.getItem('glossario-theme')==='dark'?'dark':'light'}catch{root.dataset.theme='light'}
 function isDark(){ return root.dataset.theme==='dark'; }
 function paintTheme(){
   document.querySelectorAll('.switch').forEach(b => b.setAttribute('aria-checked', String(isDark())));
 }
 document.querySelectorAll('.switch').forEach(b => b.addEventListener('click', () => {
   root.dataset.theme = isDark() ? 'light' : 'dark';
+  try{localStorage.setItem('glossario-theme',root.dataset.theme)}catch{}
   paintTheme();
 }));
 paintTheme();
 
 q.addEventListener('input', render);
 document.addEventListener('keydown', e => { if(e.key==='/' && document.activeElement!==q){ e.preventDefault(); q.focus(); }});
-update();
+window.addEventListener('hashchange',syncFromHash);
+syncFromHash();
 </script>
 </body>
 </html>
